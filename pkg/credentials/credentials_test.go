@@ -19,6 +19,7 @@ package credentials
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 )
 
@@ -70,4 +71,86 @@ func TestCredentialsGetWithError(t *testing.T) {
 			t.Errorf("Expected \"Custom error\", got %s", err.Error())
 		}
 	}
+}
+
+func TestWithNginx(t *testing.T) {
+	var (
+		stsOpts = STSAssumeRoleOptions{
+			//AccessKey:       "root",
+			//SecretKey:       "minio-openIM",
+			AccessKey:       "minioadmin",
+			SecretKey:       "minioadmin",
+			DurationSeconds: 3600,
+		}
+		//endpoint = "http://10.10.15.174:10405"
+		endpoint = "http://10.10.15.174/openim/minio"
+	)
+
+	li, err := NewSTSAssumeRole(endpoint, stsOpts)
+	if err != nil {
+		fmt.Printf("NewSTSAssumeRole failed, %v\n", err)
+		return
+	}
+	fmt.Printf("NewSTSAssumeRole, %v\n", li)
+
+	v, err := li.Get()
+	if err != nil {
+		fmt.Printf("li.Get failed, %v\n", err)
+		return
+	}
+	fmt.Printf("li.Get, %v\n", v)
+}
+
+func TestUploadFileWithNginx(t *testing.T) {
+	var (
+		stsOpts = STSAssumeRoleOptions{
+			//AccessKey:       "root",
+			//SecretKey:       "minio-openIM",
+			AccessKey:       "minioadmin",
+			SecretKey:       "minioadmin",
+			DurationSeconds: 3600,
+		}
+		//endpoint = "http://10.10.15.174:10405"
+		endpoint = "http://10.10.15.174/openim/minio"
+	)
+
+	li, err := NewSTSAssumeRole(endpoint, stsOpts)
+	if err != nil {
+		fmt.Printf("NewSTSAssumeRole failed, %v\n", err)
+		return
+	}
+	fmt.Printf("NewSTSAssumeRole, %v\n", li)
+
+	v, err := li.Get()
+	if err != nil {
+		fmt.Printf("li.Get failed, %v\n", err)
+		return
+	}
+	fmt.Printf("li.Get, %v\n", v)
+}
+
+func TestWithLocal(t *testing.T) {
+	var (
+		stsOpts = STSAssumeRoleOptions{
+			AccessKey:       "minioadmin",
+			SecretKey:       "minioadmin",
+			DurationSeconds: 3600,
+		}
+		endpoint = "http://10.40.1.233:9000"
+		//endpoint = "http://10.10.15.174/openim/minio"
+	)
+
+	li, err := NewSTSAssumeRole(endpoint, stsOpts)
+	if err != nil {
+		fmt.Printf("NewSTSAssumeRole failed, %v\n", err)
+		return
+	}
+	fmt.Printf("NewSTSAssumeRole, %v\n", li)
+
+	v, err := li.Get()
+	if err != nil {
+		fmt.Printf("li.Get failed, %v\n", err)
+		return
+	}
+	fmt.Printf("li.Get, %v\n", v)
 }

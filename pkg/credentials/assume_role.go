@@ -162,7 +162,10 @@ func getAssumeRoleCredentials(clnt *http.Client, endpoint string, opts STSAssume
 	if err != nil {
 		return AssumeRoleResponse{}, err
 	}
-	u.Path = "/"
+
+	if u.Path != "/openim/minio" {
+		u.Path = "/"
+	}
 
 	postBody := strings.NewReader(v.Encode())
 	hash := sha256.New()
@@ -179,11 +182,13 @@ func getAssumeRoleCredentials(clnt *http.Client, endpoint string, opts STSAssume
 	req.Header.Set("X-Amz-Content-Sha256", hex.EncodeToString(hash.Sum(nil)))
 	req = signer.SignV4STS(*req, opts.AccessKey, opts.SecretKey, opts.Location)
 
+	//fmt.Printf("REQ: %+v\n", req)
 	resp, err := clnt.Do(req)
 	if err != nil {
 		return AssumeRoleResponse{}, err
 	}
 	defer closeResponse(resp)
+	//fmt.Printf("RESP: %+v\n", resp)
 	if resp.StatusCode != http.StatusOK {
 		var errResp ErrorResponse
 		buf, err := ioutil.ReadAll(resp.Body)

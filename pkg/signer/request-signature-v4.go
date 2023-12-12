@@ -20,6 +20,7 @@ package signer
 import (
 	"bytes"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"sort"
 	"strconv"
@@ -42,22 +43,20 @@ const (
 	ServiceTypeSTS = "sts"
 )
 
-//
 // Excerpts from @lsegal -
 // https:/github.com/aws/aws-sdk-js/issues/659#issuecomment-120477258.
 //
-//  User-Agent:
+//	User-Agent:
 //
-//      This is ignored from signing because signing this causes
-//      problems with generating pre-signed URLs (that are executed
-//      by other agents) or when customers pass requests through
-//      proxies, which may modify the user-agent.
+//	    This is ignored from signing because signing this causes
+//	    problems with generating pre-signed URLs (that are executed
+//	    by other agents) or when customers pass requests through
+//	    proxies, which may modify the user-agent.
 //
 //
-//  Authorization:
+//	Authorization:
 //
-//      Is skipped for obvious reasons
-//
+//	    Is skipped for obvious reasons
 var v4IgnoredHeaders = map[string]bool{
 	"Authorization": true,
 	"User-Agent":    true,
@@ -176,17 +175,25 @@ func getSignedHeaders(req http.Request, ignoredHeaders map[string]bool) string {
 // getCanonicalRequest generate a canonical request of style.
 //
 // canonicalRequest =
-//  <HTTPMethod>\n
-//  <CanonicalURI>\n
-//  <CanonicalQueryString>\n
-//  <CanonicalHeaders>\n
-//  <SignedHeaders>\n
-//  <HashedPayload>
+//
+//	<HTTPMethod>\n
+//	<CanonicalURI>\n
+//	<CanonicalQueryString>\n
+//	<CanonicalHeaders>\n
+//	<SignedHeaders>\n
+//	<HashedPayload>
 func getCanonicalRequest(req http.Request, ignoredHeaders map[string]bool, hashedPayload string) string {
+	thePath := req.URL.Path
+	if strings.HasPrefix(thePath, "/openim/minio") {
+		thePath = strings.TrimPrefix(thePath, "/openim/minio")
+	}
+	if thePath == "" {
+		thePath = "/"
+	}
 	req.URL.RawQuery = strings.ReplaceAll(req.URL.Query().Encode(), "+", "%20")
 	canonicalRequest := strings.Join([]string{
 		req.Method,
-		s3utils.EncodePath(req.URL.Path),
+		s3utils.EncodePath(thePath),
 		req.URL.RawQuery,
 		getCanonicalHeaders(req, ignoredHeaders),
 		getSignedHeaders(req, ignoredHeaders),
@@ -309,6 +316,8 @@ func signV4(req http.Request, accessKeyID, secretAccessKey, sessionToken, locati
 
 	// Calculate signature.
 	signature := getSignature(signingKey, stringToSign)
+
+	fmt.Printf("signature: %s, signingKey: %v, stringToSign: %s\n, serviceType: %s, canonicalRequest: %s\n", signature, signingKey, stringToSign, serviceType, canonicalRequest)
 
 	// If regular request, construct the final authorization header.
 	parts := []string{
